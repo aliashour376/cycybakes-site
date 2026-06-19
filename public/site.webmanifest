@@ -1,0 +1,18 @@
+{
+  "name": "Cycy Bakes",
+  "short_name": "Cycy Bakes",
+  "description": "Gift-ready mini cookie tins and small-batch desserts from Batroun.",
+  "start_url": "/cycybakes-site/",
+  "scope": "/cycybakes-site/",
+  "display": "standalone",
+  "background_color": "#15110f",
+  "theme_color": "#15110f",
+  "icons": [
+    {
+      "src": "favicon.webp",
+      "sizes": "any",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+}

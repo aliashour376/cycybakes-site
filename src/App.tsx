@@ -30,6 +30,8 @@ type Enquiry = {
   details: string;
 };
 
+type RequiredField = "name" | "occasion" | "quantity" | "date" | "flavours";
+
 const brand = {
   name: "Cycy Bakes",
   handle: "@cycybakes",
@@ -159,6 +161,7 @@ function App() {
   const [enquiry, setEnquiry] = useState<Enquiry>(initialEnquiry);
   const [submissionStatus, setSubmissionStatus] = useState<"" | "opened" | "ready">("");
   const [error, setError] = useState("");
+  const [invalidFields, setInvalidFields] = useState<RequiredField[]>([]);
 
   const reveal = {
     hidden: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 34 },
@@ -177,6 +180,7 @@ function App() {
 
   function updateEnquiry<K extends keyof Enquiry>(key: K, value: Enquiry[K]) {
     setEnquiry((current) => ({ ...current, [key]: value }));
+    setInvalidFields((current) => current.filter((field) => field !== key));
     if (error) setError("");
     if (submissionStatus) setSubmissionStatus("");
   }
@@ -184,26 +188,30 @@ function App() {
   function submitEnquiry(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const missingFields = [
-      ["name", enquiry.name],
-      ["occasion", enquiry.occasion],
-      ["quantity or box size", enquiry.quantity],
-      ["pickup date", enquiry.date],
-      ["flavour preferences", enquiry.flavours],
-    ].filter(([, value]) => !value.trim());
+    const requiredFields: Array<{ key: RequiredField; label: string; value: string }> = [
+      { key: "name", label: "name", value: enquiry.name },
+      { key: "occasion", label: "occasion", value: enquiry.occasion },
+      { key: "quantity", label: "quantity or box size", value: enquiry.quantity },
+      { key: "date", label: "pickup date", value: enquiry.date },
+      { key: "flavours", label: "flavour preferences", value: enquiry.flavours },
+    ];
+    const missingFields = requiredFields.filter((field) => !field.value.trim());
 
     if (missingFields.length > 0) {
       setSubmissionStatus("");
-      setError(`Add ${missingFields.map(([label]) => label).join(", ")} before opening WhatsApp.`);
+      setInvalidFields(missingFields.map((field) => field.key));
+      setError(`Add ${missingFields.map((field) => field.label).join(", ")} before opening WhatsApp.`);
       return;
     }
 
+    setInvalidFields([]);
     const openedWindow = window.open(whatsappUrl, "_blank", "noopener,noreferrer");
     setSubmissionStatus(openedWindow ? "opened" : "ready");
   }
 
   return (
     <div className="site-shell">
+      <a className="skip-link" href="#top">Skip to main content</a>
       <header className="nav">
         <a className="brand-lockup" href="#top" aria-label="Cycy Bakes home">
           <img src={assets.logo} alt="" width="42" height="42" />
@@ -225,7 +233,7 @@ function App() {
         </a>
       </header>
 
-      <main id="top">
+      <main id="top" tabIndex={-1}>
         <section className="hero-section" aria-labelledby="hero-title">
           <div className="hero-backdrop" aria-hidden="true">
             <motion.img
@@ -303,8 +311,9 @@ function App() {
           </div>
         </section>
 
-        <section id="story" className="story-section" aria-labelledby="story-title">
+        <section className="story-section" aria-labelledby="story-title">
           <motion.div
+            id="story"
             className="section-heading"
             initial="hidden"
             whileInView="show"
@@ -406,8 +415,8 @@ function App() {
           </div>
         </section>
 
-        <section id="gallery" className="gallery-section" aria-labelledby="gallery-title">
-          <div className="section-heading compact">
+        <section className="gallery-section" aria-labelledby="gallery-title">
+          <div id="gallery" className="section-heading compact">
             <p className="section-kicker">Photoshoot</p>
             <h2 id="gallery-title">Dark stone, warm crumb, clean labels.</h2>
           </div>
@@ -431,7 +440,7 @@ function App() {
         </section>
 
         <section className="order-steps" aria-labelledby="steps-title">
-          <div className="section-heading split">
+          <div id="order" className="section-heading split">
             <div>
               <p className="section-kicker">How it works</p>
               <h2 id="steps-title">The order process stays calm and direct.</h2>
@@ -462,7 +471,7 @@ function App() {
           </div>
         </section>
 
-        <section id="order" className="order-section" aria-labelledby="order-title">
+        <section id="order-form" className="order-section" aria-labelledby="order-title">
           <motion.div
             className="order-panel"
             initial="hidden"
@@ -502,10 +511,13 @@ function App() {
               <label>
                 <span>Name</span>
                 <input
+                  id="enquiry-name"
                   value={enquiry.name}
                   onChange={(event) => updateEnquiry("name", event.target.value)}
                   placeholder="Your name"
                   autoComplete="name"
+                  aria-invalid={invalidFields.includes("name")}
+                  aria-describedby={invalidFields.includes("name") ? "form-error" : undefined}
                   required
                 />
               </label>
@@ -513,9 +525,12 @@ function App() {
               <label>
                 <span>Occasion</span>
                 <input
+                  id="enquiry-occasion"
                   value={enquiry.occasion}
                   onChange={(event) => updateEnquiry("occasion", event.target.value)}
                   placeholder="Birthday, gift, dinner table, weekend order"
+                  aria-invalid={invalidFields.includes("occasion")}
+                  aria-describedby={invalidFields.includes("occasion") ? "form-error" : undefined}
                   required
                 />
               </label>
@@ -544,18 +559,24 @@ function App() {
                 <label>
                   <span>Quantity or box size</span>
                   <input
+                    id="enquiry-quantity"
                     value={enquiry.quantity}
                     onChange={(event) => updateEnquiry("quantity", event.target.value)}
                     placeholder="2 tins, 6 brownies, mixed box"
+                    aria-invalid={invalidFields.includes("quantity")}
+                    aria-describedby={invalidFields.includes("quantity") ? "form-error" : undefined}
                     required
                   />
                 </label>
                 <label>
                   <span>Preferred pickup date</span>
                   <input
+                    id="enquiry-date"
+                    type="date"
                     value={enquiry.date}
                     onChange={(event) => updateEnquiry("date", event.target.value)}
-                    placeholder="Saturday 22 June"
+                    aria-invalid={invalidFields.includes("date")}
+                    aria-describedby={invalidFields.includes("date") ? "form-error" : undefined}
                     required
                   />
                 </label>
@@ -564,9 +585,12 @@ function App() {
               <label>
                 <span>Flavour preferences</span>
                   <input
+                    id="enquiry-flavours"
                     value={enquiry.flavours}
                     onChange={(event) => updateEnquiry("flavours", event.target.value)}
                     placeholder="Lotus, Kinder, Nutella, S'mores, mixed box"
+                    aria-invalid={invalidFields.includes("flavours")}
+                    aria-describedby={invalidFields.includes("flavours") ? "form-error" : undefined}
                     required
                   />
                 </label>
@@ -582,7 +606,7 @@ function App() {
               </label>
 
               <div className="form-status" aria-live="polite">
-                {error && <motion.p className="form-error" role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>{error}</motion.p>}
+                {error && <motion.p id="form-error" className="form-error" role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>{error}</motion.p>}
                 {submissionStatus && (
                   <motion.div className="form-success" role="status" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
                     <p>

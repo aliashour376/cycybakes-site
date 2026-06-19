@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aliashour376.github.io/cycybakes-site/sitemap.xml
